@@ -58,7 +58,7 @@ class RGBOutput(threading.Thread):
         self.rainbow_roll_skip = 1.0
         self.rainbow_roll_state = 0
         self.rainbow_roll_interval = 1.0
-        self.pattern_mode = "none"
+        self.pattern_mode = "triangle"
         self.pattern_skip = 16.0
         self.pattern_state = 0.0
         self.luminosity = 1.0
@@ -113,7 +113,6 @@ class RGBOutput(threading.Thread):
         for i in range(self.strip.numPixels()):
             self.output_data[i] = wheel(int((float(i) * self.rainbow_roll_interval ) + self.rainbow_roll_state) & 255 )
         self.rainbow_roll_state += self.rainbow_roll_skip
-        print(self.rainbow_roll_state)
         if(self.rainbow_roll_state > 255.0):
             self.rainbow_roll_state = 0
         elif(self.rainbow_roll_state < 0):
@@ -138,7 +137,7 @@ class RGBOutput(threading.Thread):
         if(int(self.pattern_state) < (PATTERN_SPLIT / 2)):
             rate = (1.0 / (PATTERN_SPLIT / 2)) * self.pattern_state
         else:
-            rate = ((-1.0 / (PATTERN_SPLIT / 2)) * self.pattern_state) + 1.0
+            rate = ((1.0 / (PATTERN_SPLIT / 2)) * (PATTERN_SPLIT-self.pattern_state))
         return RGBData(rgb_data.r * rate, rgb_data.g * rate, rgb_data.b * rate)
 
 class OscDispatcher:
