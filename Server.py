@@ -14,7 +14,7 @@ from pythonosc.dispatcher import Dispatcher
 
 
 # LED strip configuration:
-LED_COUNT      = 600      # Number of LED pixels.
+LED_COUNT      = 100      # Number of LED pixels.
 LED_PIN        = 12      # GPIO pin connected to the pixels (18 uses PWM!).
 #LED_PIN        = 10      # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
 LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
@@ -37,28 +37,28 @@ class RGBData:
         self.b = int(b)
     
     def get_color(self):
-        return Color(self.r,self.g,self.b)
+        return Color(int(self.g),int(self.r),int(self.b))
 
 def wheel(pos):
     """Generate rainbow colors across 0-255 positions."""
     if pos < 85:
-        return RGBData(pos * 3, 255 - pos * 3, 0)
+        return RGBData(g=pos * 3,r=255 - pos * 3,b=0)
     elif pos < 170:
         pos -= 85
-        return RGBData(255 - pos * 3, 0, pos * 3)
+        return RGBData(g=255 - pos * 3,r= 0,b= pos * 3)
     else:
         pos -= 170
-        return RGBData(0, pos * 3, 255 - pos * 3)
+        return RGBData(g=0,r= pos * 3,b= 255 - pos * 3)
 
 class RGBOutput(threading.Thread):
     def __init__(self,strip):
         threading.Thread.__init__(self)
-        self.rgb_mode = "point"
+        self.rgb_mode = "rainbow"
         self.rgb_color = RGBData(255,0,0)
         self.rainbow_roll_skip = 1.0
         self.rainbow_roll_state = 0
         self.rainbow_roll_interval = 1.0
-        self.pattern_mode = "beat"
+        self.pattern_mode = "none"
         self.pattern_skip = 16.0
         self.pattern_state = 0.0
         self.luminosity = 1.0
@@ -72,6 +72,7 @@ class RGBOutput(threading.Thread):
         print("Finish initializing RGBOutput")
 
     def run(self):
+        while True:
         #Color Mode Select Section
         if(self.rgb_mode == "point"):
             self.point_color()
@@ -88,7 +89,6 @@ class RGBOutput(threading.Thread):
                 self.output_data[i] = self.generate_pulse(self.output_data[i])
             elif(self.pattern_mode == "triangle"):
                 self.output_data[i] = self.generate_triangle(self.output_data[i])
-
         self.pattern_state += self.pattern_skip
         if(self.pattern_state > 1920.0):
             self.pattern_state = 0
@@ -101,7 +101,7 @@ class RGBOutput(threading.Thread):
 
         #Output Data Section
         for i in range(self.strip.numPixels()):
-            self.strip.setPixelcolor(i,self.output_data[i].get_color())
+            self.strip.setPixelColor(i,self.output_data[i].get_color())
         self.strip.show()
         time.sleep(WAIT_MS/1000.0)
 
@@ -111,8 +111,9 @@ class RGBOutput(threading.Thread):
     
     def rainbow_color(self):
         for i in range(self.strip.numPixels()):
-            self.output_data[i] = wheel( int(((i * self.rainbow_roll_interval ) + self.rainbow_roll_state) & 255) )
+            self.output_data[i] = wheel(int((float(i) * self.rainbow_roll_interval ) + self.rainbow_roll_state) & 255 )
         self.rainbow_roll_state += self.rainbow_roll_skip
+        print(self.rainbow_roll_state)
         if(self.rainbow_roll_state > 255.0):
             self.rainbow_roll_state = 0
         elif(self.rainbow_roll_state < 0):
