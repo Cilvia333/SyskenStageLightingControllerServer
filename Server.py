@@ -73,37 +73,37 @@ class RGBOutput(threading.Thread):
 
     def run(self):
         while True:
-        #Color Mode Select Section
-        if(self.rgb_mode == "point"):
-            self.point_color()
-        else:
-            self.rainbow_color()
+            #Color Mode Select Section
+            if(self.rgb_mode == "point"):
+                self.point_color()
+            else:
+                self.rainbow_color()
 
-        #Lighting Pattern Select Section
-        for i in range(self.strip.numPixels()):
-            if(self.pattern_mode == "beat"):
-                self.output_data[i] = self.generate_beat(self.output_data[i])
-            elif(self.pattern_mode == "breath"):
-                self.output_data[i] = self.generate_breath(self.output_data[i])
-            elif(self.pattern_mode == "pulse"):
-                self.output_data[i] = self.generate_pulse(self.output_data[i])
-            elif(self.pattern_mode == "triangle"):
-                self.output_data[i] = self.generate_triangle(self.output_data[i])
-        self.pattern_state += self.pattern_skip
-        if(self.pattern_state > 1920.0):
-            self.pattern_state = 0
+            #Lighting Pattern Select Section
+            for i in range(self.strip.numPixels()):
+                if(self.pattern_mode == "beat"):
+                    self.output_data[i] = self.generate_beat(self.output_data[i])
+                elif(self.pattern_mode == "breath"):
+                    self.output_data[i] = self.generate_breath(self.output_data[i])
+                elif(self.pattern_mode == "pulse"):
+                    self.output_data[i] = self.generate_pulse(self.output_data[i])
+                elif(self.pattern_mode == "triangle"):
+                    self.output_data[i] = self.generate_triangle(self.output_data[i])
+            self.pattern_state += self.pattern_skip
+            if(self.pattern_state > 1920.0):
+                self.pattern_state = 0
 
-        #Luminosity Select Section
-        for i in range(self.strip.numPixels()):
-            self.output_data[i].r *= self.luminosity
-            self.output_data[i].g *= self.luminosity
-            self.output_data[i].b *= self.luminosity
+            #Luminosity Select Section
+            for i in range(self.strip.numPixels()):
+                self.output_data[i].r *= self.luminosity
+                self.output_data[i].g *= self.luminosity
+                self.output_data[i].b *= self.luminosity
 
-        #Output Data Section
-        for i in range(self.strip.numPixels()):
-            self.strip.setPixelColor(i,self.output_data[i].get_color())
-        self.strip.show()
-        time.sleep(WAIT_MS/1000.0)
+            #Output Data Section
+            for i in range(self.strip.numPixels()):
+                self.strip.setPixelColor(i,self.output_data[i].get_color())
+            self.strip.show()
+            time.sleep(WAIT_MS/1000.0)
 
     def point_color(self):
         for i in range(self.strip.numPixels()):
