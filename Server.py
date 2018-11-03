@@ -6,15 +6,16 @@
 # various animations on a strip of NeoPixels.
 
 import time
-from neopixel import *
+#from neopixel import *
+from rpi_ws281x import *
 import argparse
 import threading
 from pythonosc import osc_server
 from pythonosc.dispatcher import Dispatcher
-
+import RPi.GPIO as GPIO
 
 # LED strip configuration:
-LED_COUNT      = 100      # Number of LED pixels.
+LED_COUNT      = 300      # Number of LED pixels.
 LED_PIN        = 12      # GPIO pin connected to the pixels (18 uses PWM!).
 #LED_PIN        = 10      # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
 LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
@@ -58,7 +59,7 @@ class RGBOutput(threading.Thread):
         self.rainbow_roll_skip = 1.0
         self.rainbow_roll_state = 0
         self.rainbow_roll_interval = 1.0
-        self.pattern_mode = "triangle"
+        self.pattern_mode = "none"
         self.pattern_skip = 16.0
         self.pattern_state = 0.0
         self.luminosity = 1.0
@@ -186,6 +187,11 @@ def main():
 
     #Finish Initialization
     print ('Press Ctrl-C to quit.')
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(13,GPIO.OUT)
+    pwm = GPIO.PWM(13,1000)
+    pwm.start(50)
 
     #start server & thread
     rgb_thread.start()
