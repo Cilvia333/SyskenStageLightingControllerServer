@@ -24,7 +24,8 @@ LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
 LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 WAIT_MS        = 31.25      # min interval
-PATTERN_SPLIT      = 1920.0
+PATTERN_SPLIT  = 1920.0
+PATTERN_BREAK   = 200.0
 
 # Listen IP & PORT
 IP = '127.0.0.1'
@@ -121,17 +122,25 @@ class RGBOutput(threading.Thread):
 
     def generate_beat(self,rgb_data):
         rate = int(self.pattern_state)
-        return RGBData(rgb_data.r * rate, rgb_data.g * rate, rgb_data.b * rate)
-
-    def generate_breath(self,rgb_data):
-        rate = int(self.pattern_state)
-        return RGBData(rgb_data.r * rate, rgb_data.g * rate, rgb_data.b * rate)
-
-    def generate_pulse(self,rgb_data):
         if(int(self.pattern_state) < (PATTERN_SPLIT / 2)):
             rate = 1.0
         else:
             rate = 0.0
+        return RGBData(rgb_data.r * rate, rgb_data.g * rate, rgb_data.b * rate)
+
+    def generate_breath(self,rgb_data):
+        rate = int(self.pattern_state)
+        if(self.pattern_state < (PATTERN_SPLIT - PATTERN_BREAK)):
+            rate = 1.0 - pow((self.pattern_state / (PATTERN_SPLIT / PATTERN_BREAK)),2)
+        else:
+            rate = 0.0
+        return RGBData(rgb_data.r * rate, rgb_data.g * rate, rgb_data.b * rate)
+
+    def generate_pulse(self,rgb_data):
+        if(self.pattern_state < PATTERN_BREAK):
+            rate = 0.0
+        else:
+            rate = pow(((self.pattern_state-PATTERN_BREAK) / (PATTERN_SPLIT / PATTERN_BREAK)),2)
         return RGBData(rgb_data.r * rate, rgb_data.g * rate, rgb_data.b * rate)
 
     def generate_triangle(self,rgb_data):
@@ -147,21 +156,31 @@ class OscDispatcher:
 
     def color_mode(self,unused_addr,mode):
         self.rgb_thread.rgb_mode = mode
+        print("ColorMode:",mode)
     
     def rgb(self,unused_addr,r,g,b):
         self.rgb_thread.rgb_color = RGBData(r,g,b)
+        print("ColorRGB:",r,g,b)
 
     def rainbow_role_speed(self,unused_addr,speed):
         self.rgb_thread.rainbow_roll_skip = speed * DEF_ROLE_SPEED
+        print("RoleSpeed:",speed)
 
     def pattern(self,unused_addr,pattern):
         self.rgb_thread.pattern_mode = pattern
+        print("Pattern:",pattern)
 
     def bpm(self,unused_addr,bpm):
         self.rgb_thread.pattern_skip = PATTERN_SPLIT / bpm
+        print("BPM:",bpm)
+
+    def bpm_reset(self,unused_addr):
+        self.rgb_thread.pattern_state = 0
+        print("BPM Reset")
 
     def luminosity(self,unused_addr,luminosity):
         self.rgb_thread.luminosity = luminosity
+        print("Luminosity:",luminosity)
 
 # Main program logic follows:
 def main():
@@ -176,12 +195,13 @@ def main():
     # OSC 
     osc_dispacher = OscDispatcher(rgb_thread)
     dispatcher = Dispatcher()
-    dispatcher.map('/color_mode', osc_dispacher.color_mode) # URLにコールバック関数を割り当てる
-    dispatcher.map('/rgb', osc_dispacher.rgb) # URLにコールバック関数を割り当てる
-    dispatcher.map('/rainbow_role_speed', osc_dispacher.rainbow_role_speed) # URLにコールバック関数を割り当てる
-    dispatcher.map('/pattern', osc_dispacher.pattern) # URLにコールバック関数を割り当てる
-    dispatcher.map('/bpm', osc_dispacher.bpm) # URLにコールバック関数を割り当てる
-    dispatcher.map('/luminosity', osc_dispacher.luminosity) # URLにコールバック関数を割り当てる
+    dispatcher.map('/color_mode', osc_dispacher.color_mode)
+    dispatcher.map('/rgb', osc_dispacher.rgb)
+    dispatcher.map('/rainbow_role_speed', osc_dispacher.rainbow_role_speed)
+    dispatcher.map('/pattern', osc_dispacher.pattern)
+    dispatcher.map('/bpm', osc_dispacher.bpm)
+    dispatcher.map('/bpm_reset', osc_dispacher.bpm_reset)
+    dispatcher.map('/luminosity', osc_dispacher.luminosity)
 
     server = osc_server.ThreadingOSCUDPServer((IP, PORT), dispatcher)
 
